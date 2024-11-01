@@ -1,10 +1,11 @@
-package com.steve.http.client;
+package com.airline.http.client;
 
-import com.steve.domain.Aircraft;
-import com.steve.domain.Airport;
-import com.steve.domain.City;
-import com.steve.domain.Passenger;
+import com.airline.domain.Aircraft;
+import com.airline.domain.Airport;
+import com.airline.domain.City;
+import com.airline.domain.Passenger;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -21,48 +22,98 @@ public class RESTClient {
 
     public RESTClient(String baseUrl) {
         this.httpClient = HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper();
-        this.baseUrl = "http://localhost:8080";
+        this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.baseUrl = baseUrl;
     }
 
     public List<City> getAllCities() {
         return fetchList("/cities", new TypeReference<List<City>>() {});
     }
 
+    public List<Aircraft> getAircraftByPassengerId(Long passengerId) {
+        return fetchList("/passengers/" + passengerId + "/aircrafts", new TypeReference<List<Aircraft>>() {});
+    }
+
     public List<Airport> getAllAirports() {
         return fetchList("/airports", new TypeReference<List<Airport>>() {});
     }
 
-    public List<Aircraft> getAllAircraft() {
-        System.out.println("Fetching all aircraft from " + baseUrl + "/aircrafts");
-        List<Aircraft> aircraftList = fetchList("/aircrafts", new TypeReference<List<Aircraft>>() {});
-        if (aircraftList != null) {
-            System.out.println("Successfully fetched " + aircraftList.size() + " aircraft");
-        } else {
-            System.err.println("Failed to fetch aircraft");
+    public Passenger getPassengerById(Long passengerId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/passengers/" + passengerId))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), Passenger.class);
+            } else {
+                System.err.println("Error: " + response.body());
+                return null;
+            }
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Exception occurred: " + e.getMessage());
+            return null;
         }
+    }
+
+
+    public List<Aircraft> getAllAircraft() {
+        System.out.println("Fetching all aircraft from " + baseUrl + "/aircraft");
+        List<Aircraft> aircraftList = fetchList("/aircraft", new TypeReference<List<Aircraft>>() {});
+        if (aircraftList == null) {
+            System.err.println("Failed to fetch aircraft");
+            return List.of();
+        }
+        System.out.println("Successfully fetched " + aircraftList.size() + " aircraft");
         return aircraftList;
+    }
+
+    public City getCityById(Long cityId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/cities/" + cityId))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), City.class);
+            } else {
+                System.err.println("Error: " + response.body());
+                return null;
+            }
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Exception occurred: " + e.getMessage());
+            return null;
+        }
     }
 
     public List<Passenger> getAllPassengers() {
         return fetchList("/passengers", new TypeReference<List<Passenger>>() {});
     }
 
-    public boolean addPassengerToAircraft(Long passengerId, Long aircraftId) {
+    private <T> T fetchObject(String endpoint, Class<T> clazz) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/passengers/" + passengerId + "/aircrafts/" + aircraftId))
-                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .uri(URI.create(baseUrl + endpoint))
+                    .GET()
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Response for adding passenger to aircraft: " + response.body());
-
-            return response.statusCode() == 200;
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), clazz);
+            } else {
+                System.err.println("Error: " + response.body());
+                return null;
+            }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            return false;
+            System.err.println("Exception occurred: " + e.getMessage());
+            return null;
         }
     }
 
@@ -75,8 +126,6 @@ public class RESTClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Response for " + endpoint + ": " + response.body());
-
             if (response.statusCode() == 200) {
                 return objectMapper.readValue(response.body(), typeReference);
             } else {
@@ -84,7 +133,7 @@ public class RESTClient {
                 return null;
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            System.err.println("Exception occurred: " + e.getMessage());
             return null;
         }
     }
