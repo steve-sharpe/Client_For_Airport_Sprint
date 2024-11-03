@@ -6,8 +6,8 @@ import com.airline.domain.City;
 import com.airline.domain.Passenger;
 import com.airline.http.client.RESTClient;
 
-import java.util.List;
-import java.util.Scanner;
+import java.io.IOException;
+import java.util.*;
 
 public class CommandLineInterface {
     private final RESTClient restClient;
@@ -18,157 +18,290 @@ public class CommandLineInterface {
 
     public void run() {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Welcome to the Flight Management CLI!");
-
         while (true) {
-            System.out.println("\nAvailable commands:");
-            System.out.println("1. List all cities");
-            System.out.println("2. List all airports");
-            System.out.println("3. List all aircraft");
-            System.out.println("4. List all passengers");
-            System.out.println("5. Generate passenger, aircraft, and city report");
-            System.out.println("6. Exit");
-            System.out.print("\nEnter your command: ");
+            System.out.println("\n===================================");
+            System.out.println("          MAIN MENU               ");
+            System.out.println("===================================");
+            System.out.println("1. List Passengers");
+            System.out.println("2. List Aircraft");
+            System.out.println("3. List Airports");
+            System.out.println("4. List Cities");
+            System.out.println("5. List Passengers with Aircraft Info");
+            System.out.println("6. List Cities with Airport Info");
+            System.out.println("7. Exit");
+            System.out.print("Enter your choice: ");
 
-            int command = scanner.nextInt();
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // consume newline
 
-            switch (command) {
+            switch (choice) {
                 case 1:
-                    listCities();
+                    showSubMenu("Passengers");
                     break;
                 case 2:
-                    listAirports();
+                    showSubMenu("Aircraft");
                     break;
                 case 3:
-                    listAircraft();
+                    showSubMenu("Airports");
                     break;
                 case 4:
-                    listPassengers();
+                    showSubMenu("Cities");
                     break;
                 case 5:
-                    generatePassengerAircraftCityReport();
+                    listPassengersWithAircraft();
                     break;
                 case 6:
+                    listCitiesWithAirports();
+                    break;
+                case 7:
                     System.out.println("Exiting...");
                     return;
                 default:
-                    System.out.println("Invalid command. Please try again.");
+                    System.out.println("Invalid choice. Please try again.");
             }
         }
     }
 
-    private void generatePassengerAircraftCityReport() {
-        List<Passenger> passengers = restClient.getAllPassengers();
-        if (passengers == null) {
-            System.out.println("Error fetching passengers.");
-            return;
-        }
+    private void showSubMenu(String entity) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n===================================");
+        System.out.println("        " + entity.toUpperCase() + " MENU          ");
+        System.out.println("===================================");
+        System.out.println("1. Show all " + entity);
+        System.out.println("2. Show " + entity + " by ID");
+        System.out.print("Enter your choice: ");
 
-        if (passengers.isEmpty()) {
-            System.out.println("No passengers found.");
-            return;
-        }
+        int subChoice = scanner.nextInt();
+        scanner.nextLine(); // consume newline
 
-        System.out.println("Passenger, Aircraft, and City Report:");
-        for (Passenger passenger : passengers) {
-            System.out.println("\n==============================");
-            System.out.println("Passenger ID: " + passenger.getId() + ", Name: " + passenger.getFirstName() + " " + passenger.getLastName());
-            System.out.println("Phone Number: " + passenger.getPhoneNumber());
-
-            City city = restClient.getCityById(passenger.getCityId());
-            if (city != null) {
-                System.out.println("City: [ID: " + city.getId() + ", Name: " + city.getName() + "]");
-            } else {
-                System.out.println("City: null");
-            }
-
-            List<Aircraft> aircrafts = restClient.getAircraftByPassengerId(passenger.getId());
-            if (aircrafts != null && !aircrafts.isEmpty()) {
-                System.out.println("Aircrafts:");
-                for (Aircraft aircraft : aircrafts) {
-                    System.out.println("  Aircraft ID: " + aircraft.getId() + ", Model: " + aircraft.getType() + ", Airline: " + aircraft.getAirlineName());
+        switch (subChoice) {
+            case 1:
+                switch (entity) {
+                    case "Passengers":
+                        listPassengers();
+                        break;
+                    case "Aircraft":
+                        listAircraft();
+                        break;
+                    case "Airports":
+                        listAirports();
+                        break;
+                    case "Cities":
+                        listCities();
+                        break;
                 }
+                break;
+            case 2:
+                System.out.print("Enter " + entity.substring(0, entity.length() - 1) + " ID: ");
+                Long id = scanner.nextLong();
+                scanner.nextLine(); // consume newline
+                switch (entity) {
+                    case "Passengers":
+                        showPassengerById(id);
+                        break;
+                    case "Aircraft":
+                        showAircraftById(id);
+                        break;
+                    case "Airports":
+                        showAirportById(id);
+                        break;
+                    case "Cities":
+                        showCityById(id);
+                        break;
+                }
+                break;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+        }
+    }
+
+    private void listPassengersWithAircraft() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter Passenger ID: ");
+        Long passengerId = scanner.nextLong();
+        scanner.nextLine(); // consume newline
+
+        Passenger passenger = restClient.getPassengerById(passengerId);
+        if (passenger != null) {
+            System.out.println("\n===================================");
+            System.out.println("     PASSENGER WITH AIRCRAFT       ");
+            System.out.println("===================================");
+            System.out.printf("%-5s %-20s %-15s%n", "ID", "Name", "Phone");
+            System.out.println("-----------------------------------");
+            System.out.printf("%-5d %-20s %-15s%n", passenger.getId(), passenger.getFirstName() + " " + passenger.getLastName(), passenger.getPhoneNumber());
+            List<Aircraft> aircrafts = passenger.getAircraft();
+            if (aircrafts != null && !aircrafts.isEmpty()) {
+                System.out.println("\n  Aircraft:");
+                System.out.printf("    %-5s %-20s %-10s%n", "ID", "Model", "Capacity");
+                System.out.println("    ---------------------------------------------");
+                aircrafts.forEach(aircraft -> {
+                    System.out.printf("    %-5d %-20s %-10d%n", aircraft.getId(), aircraft.getType(), aircraft.getNumberOfPassengers());
+                });
             } else {
-                System.out.println("No aircrafts assigned.");
+                System.out.println("  Aircraft: N/A");
             }
+            System.out.println();
+        } else {
+            System.out.println("Passenger not found.");
         }
-        paginate();
     }
 
-    private void listCities() {
-        List<City> cities = restClient.getAllCities();
-        if (cities == null || cities.isEmpty()) {
-            System.out.println("No cities found.");
-            return;
-        }
+    private void listCitiesWithAirports() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter City ID: ");
+        Long cityId = scanner.nextLong();
+        scanner.nextLine(); // consume newline
 
-        System.out.println("Cities:");
-        for (City city : cities) {
-            System.out.println("\n==============================");
-            System.out.println("ID: " + city.getId() + ", Name: " + city.getName() + ", State: " + city.getState() + ", Population: " + city.getPopulation());
+        City city = restClient.getCityById(cityId);
+        if (city != null) {
+            System.out.println("\n===================================");
+            System.out.println("       CITY WITH AIRPORTS          ");
+            System.out.println("===================================");
+            System.out.printf("%-5s %-20s %-10s%n", "ID", "Name", "Population");
+            System.out.println("-----------------------------------");
+            System.out.printf("%-5d %-20s %-10d%n", city.getId(), city.getName(), city.getPopulation());
+            List<Airport> airports = restClient.getAirportsByCityId(city.getId());
+            if (airports != null && !airports.isEmpty()) {
+                System.out.println("\n  Airports:");
+                System.out.printf("    %-5s %-30s %-5s%n", "ID", "Airport Name", "Code");
+                System.out.println("    ---------------------------------------------");
+                airports.forEach(airport -> {
+                    System.out.printf("    %-5d %-30s %-5s%n", airport.getId(), airport.getName(), airport.getCode());
+                });
+            } else {
+                System.out.println("  No airports found.");
+            }
+            System.out.println();
+        } else {
+            System.out.println("City not found.");
         }
-        paginate();
     }
 
-    private void listAirports() {
-        List<Airport> airports = restClient.getAllAirports();
-        if (airports == null || airports.isEmpty()) {
-            System.out.println("No airports found.");
-            return;
+    private void showPassengerById(Long id) {
+        Passenger passenger = restClient.getPassengerById(id);
+        if (passenger != null) {
+            System.out.println("\n===================================");
+            System.out.println("        PASSENGER DETAILS          ");
+            System.out.println("===================================");
+            System.out.printf("ID: %-5d%nName: %-20s %-20s%nPhone: %-15s%n", passenger.getId(), passenger.getFirstName(), passenger.getLastName(), passenger.getPhoneNumber());
+        } else {
+            System.out.println("Passenger not found.");
         }
+        System.out.println();
+    }
 
-        System.out.println("Airports:");
-        for (Airport airport : airports) {
-            System.out.println("\n==============================");
-            System.out.println("ID: " + airport.getId() + ", Name: " + airport.getName() + ", Code: " + airport.getCode());
+    private void showAircraftById(Long id) {
+        Aircraft aircraft = restClient.getAircraftById(id);
+        if (aircraft != null) {
+            System.out.println("\n===================================");
+            System.out.println("        AIRCRAFT DETAILS           ");
+            System.out.println("===================================");
+            System.out.printf("ID: %-5d%nModel: %-20s%nCapacity: %-10d%n", aircraft.getId(), aircraft.getType(), aircraft.getNumberOfPassengers());
+        } else {
+            System.out.println("Aircraft not found.");
         }
-        paginate();
+        System.out.println();
+    }
+
+    private void showAirportById(Long id) {
+        Airport airport = restClient.getAirportById(id);
+        if (airport != null) {
+            System.out.println("\n===================================");
+            System.out.println("         AIRPORT DETAILS           ");
+            System.out.println("===================================");
+            System.out.printf("ID: %-5d%nName: %-20s%nCode: %-5s%n", airport.getId(), airport.getName(), airport.getCode());
+            City city = airport.getCity();
+            if (city != null) {
+                System.out.printf("City: %-20s (ID: %-5d)%n", city.getName(), city.getId());
+            } else {
+                System.out.println("City: N/A");
+            }
+        } else {
+            System.out.println("Airport not found.");
+        }
+        System.out.println();
+    }
+
+    private void showCityById(Long id) {
+        City city = restClient.getCityById(id);
+        if (city != null) {
+            System.out.println("\n===================================");
+            System.out.println("          CITY DETAILS             ");
+            System.out.println("===================================");
+            System.out.printf("ID: %-5d%nName: %-20s%nPopulation: %-10d%n", city.getId(), city.getName(), city.getPopulation());
+        } else {
+            System.out.println("City not found.");
+        }
+        System.out.println();
+    }
+
+    private void listPassengers() {
+        List<Passenger> passengers = restClient.getPassengers();
+        if (passengers != null) {
+            System.out.println("\n===================================");
+            System.out.println("           PASSENGERS              ");
+            System.out.println("===================================");
+            System.out.printf("%-5s %-20s %-15s%n", "ID", "Name", "Phone");
+            System.out.println("-----------------------------------");
+            passengers.forEach(passenger ->
+                    System.out.printf("%-5d %-20s %-15s%n", passenger.getId(), passenger.getFirstName() + " " + passenger.getLastName(), passenger.getPhoneNumber())
+            );
+        } else {
+            System.out.println("No passengers found.");
+        }
+        System.out.println();
     }
 
     private void listAircraft() {
         List<Aircraft> aircrafts = restClient.getAllAircraft();
-        if (aircrafts == null || aircrafts.isEmpty()) {
+        if (aircrafts != null) {
+            System.out.println("\n===================================");
+            System.out.println("           AIRCRAFT               ");
+            System.out.println("===================================");
+            System.out.printf("%-5s %-20s %-10s%n", "ID", "Model", "Capacity");
+            System.out.println("-----------------------------------");
+            aircrafts.forEach(aircraft ->
+                    System.out.printf("%-5d %-20s %-10d%n", aircraft.getId(), aircraft.getType(), aircraft.getNumberOfPassengers())
+            );
+        } else {
             System.out.println("No aircraft found.");
-            return;
         }
-
-        System.out.println("Aircraft:");
-        for (Aircraft aircraft : aircrafts) {
-            System.out.println("\n==============================");
-            System.out.println("ID: " + aircraft.getId() + ", Model: " + aircraft.getType() + " (" + aircraft.getAirlineName() + ")");
-        }
-        paginate();
+        System.out.println();
     }
 
-    private void listPassengers() {
-        List<Passenger> passengers = restClient.getAllPassengers();
-        if (passengers == null) {
-            System.out.println("Error fetching passengers.");
-            return;
+    private void listAirports() {
+        List<Airport> airports = restClient.getAllAirports();
+        if (airports != null && !airports.isEmpty()) {
+            System.out.println("\n===================================");
+            System.out.println("           AIRPORTS               ");
+            System.out.println("===================================");
+            System.out.printf("%-5s %-20s %-5s%n", "ID", "Name", "Code");
+            System.out.println("-----------------------------------");
+            airports.forEach(airport -> {
+                System.out.printf("%-5d %-20s %-5s%n", airport.getId(), airport.getName(), airport.getCode());
+            });
+        } else {
+            System.out.println("No airports found.");
         }
-
-        if (passengers.isEmpty()) {
-            System.out.println("No passengers found.");
-            return;
-        }
-
-        System.out.println("Passengers:");
-        for (Passenger passenger : passengers) {
-            System.out.println("\n==============================");
-            String phone = passenger.getPhoneNumber();
-            if (phone == null) {
-                System.out.println("ID: " + passenger.getId() + ", Name: " + passenger.getFirstName() + " " + passenger.getLastName() + ", Phone: null");
-            } else {
-                System.out.println("ID: " + passenger.getId() + ", Name: " + passenger.getFirstName() + " " + passenger.getLastName() + ", Phone: " + phone);
-            }
-        }
-        paginate();
+        System.out.println();
     }
 
-    private void paginate() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\nPress Enter to continue...");
-        scanner.nextLine();
+    private void listCities() {
+        List<City> cities = restClient.getAllCities();
+        if (cities != null) {
+            System.out.println("\n===================================");
+            System.out.println("           CITIES                 ");
+            System.out.println("===================================");
+            System.out.printf("%-5s %-20s %-10s%n", "ID", "Name", "Population");
+            System.out.println("-----------------------------------");
+            cities.forEach(city ->
+                    System.out.printf("%-5d %-20s %-10d%n", city.getId(), city.getName(), city.getPopulation())
+            );
+
+        } else {
+            System.out.println("No cities found.");
+        }
+        System.out.println();
     }
 
     public static void main(String[] args) {

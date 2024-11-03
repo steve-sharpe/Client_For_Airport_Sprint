@@ -1,27 +1,47 @@
 package com.airline.domain;
 
-import java.util.Objects;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+import java.util.Objects;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Passenger {
+
+    @JsonProperty("id")
     private Long id;
+
+    @JsonProperty("firstName")
     private String firstName;
+
+    @JsonProperty("lastName")
     private String lastName;
+
+    @JsonProperty("phoneNumber")
     private String phoneNumber;
+
+    @JsonProperty("cityId")
     private Long cityId;
-    private Set<Aircraft> aircrafts;
+
+    @JsonProperty("aircraft")
+    private List<Aircraft> aircraft;
+
+    @JsonProperty("airport")
+    private Airport airport; // Add this field
 
     // Default constructor
     public Passenger() {}
 
     // Parameterized constructor
-    public Passenger(Long id, String firstName, String lastName, String phoneNumber, Long cityId, Set<Aircraft> aircrafts) {
+    public Passenger(Long id, String firstName, String lastName, String phoneNumber, Long cityId, List<Aircraft> aircraft, Airport airport) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.phoneNumber = phoneNumber;
         this.cityId = cityId;
-        this.aircrafts = aircrafts;
+        this.aircraft = aircraft;
+        this.airport = airport;
     }
 
     // Getters and Setters
@@ -65,14 +85,23 @@ public class Passenger {
         this.cityId = cityId;
     }
 
-    public Set<Aircraft> getAircrafts() {
-        return aircrafts;
+    public List<Aircraft> getAircraft() {
+        return aircraft;
     }
 
-    public void setAircrafts(Set<Aircraft> aircrafts) {
-        this.aircrafts = aircrafts;
+    public void setAircraft(List<Aircraft> aircraft) {
+        this.aircraft = aircraft;
     }
 
+    public Airport getAirport() {
+        return airport;
+    }
+
+    public void setAirport(Airport airport) {
+        this.airport = airport;
+    }
+
+    // Override toString, equals, and hashCode for better debugging and comparisons
     @Override
     public String toString() {
         return "Passenger{" +
@@ -81,23 +110,26 @@ public class Passenger {
                 ", lastName='" + lastName + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", cityId=" + cityId +
+                ", aircraft=" + aircraft +
+                ", airport=" + airport +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Passenger passenger = (Passenger) o;
+        if (!(o instanceof Passenger passenger)) return false;
         return Objects.equals(id, passenger.id) &&
                 Objects.equals(firstName, passenger.firstName) &&
                 Objects.equals(lastName, passenger.lastName) &&
                 Objects.equals(phoneNumber, passenger.phoneNumber) &&
-                Objects.equals(cityId, passenger.cityId);
+                Objects.equals(cityId, passenger.cityId) &&
+                Objects.equals(aircraft, passenger.aircraft) &&
+                Objects.equals(airport, passenger.airport);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, phoneNumber, cityId);
+        return Objects.hash(id, firstName, lastName, phoneNumber, cityId, aircraft, airport);
     }
 }

@@ -1,20 +1,21 @@
 package com.airline.domain;
+
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 public class City {
     private Long id;
     private String name;
     private String state;
     private int population;
-    private Set<Airport> airports;
-    private Set<Passenger> passengers;
+    private List<Airport> airports;
+    private List<Passenger> passengers;
 
     // Default constructor
     public City() {}
 
     // Parameterized constructor
-    public City(Long id, String name, String state, int population, Set<Airport> airports, Set<Passenger> passengers) {
+    public City(Long id, String name, String state, int population, List<Airport> airports, List<Passenger> passengers) {
         this.id = id;
         this.name = name;
         this.state = state;
@@ -56,30 +57,20 @@ public class City {
         this.population = population;
     }
 
-    public Set<Airport> getAirports() {
+    public List<Airport> getAirports() {
         return airports;
     }
 
-    public void setAirports(Set<Airport> airports) {
+    public void setAirports(List<Airport> airports) {
         this.airports = airports;
     }
 
-    public Set<Passenger> getPassengers() {
+    public List<Passenger> getPassengers() {
         return passengers;
     }
 
-    public void setPassengers(Set<Passenger> passengers) {
+    public void setPassengers(List<Passenger> passengers) {
         this.passengers = passengers;
-    }
-
-    @Override
-    public String toString() {
-        return "City{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", state='" + state + '\'' +
-                ", population=" + population +
-                '}';
     }
 
     @Override

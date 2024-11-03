@@ -1,15 +1,16 @@
 package com.airline.domain;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 public class Aircraft {
+
     private Long id;
     private String type;
     private int numberOfPassengers;
     private String airlineName;
-    private Set<Passenger> passengers;
-    private Set<Airport> airport; // Correct field
+    private List<Passenger> passengers;  // Changed to List
+    private Airport airport;  // Changed from Set to a single Airport
 
     public Long getId() {
         return id;
@@ -43,23 +44,22 @@ public class Aircraft {
         this.airlineName = airlineName;
     }
 
-    public Set<Passenger> getPassengers() {
+    public List<Passenger> getPassengers() {
         return passengers;
     }
 
-    public void setPassengers(Set<Passenger> passengers) {
+    public void setPassengers(List<Passenger> passengers) {
         this.passengers = passengers;
     }
 
-    public Set<Airport> getAirport() {
+    public Airport getAirport() {
         return airport;
     }
 
-    public void setAirport(Set<Airport> airport) {
+    public void setAirport(Airport airport) {
         this.airport = airport;
     }
 
     // Default constructor
     public Aircraft() {}
-
 }

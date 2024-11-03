@@ -26,73 +26,52 @@ public class RESTClient {
         this.baseUrl = baseUrl;
     }
 
-    public List<City> getAllCities() {
-        return fetchList("/cities", new TypeReference<List<City>>() {});
+    public ObjectMapper getObjectMapper() {
+        return objectMapper;
     }
 
     public List<Aircraft> getAircraftByPassengerId(Long passengerId) {
-        return fetchList("/passengers/" + passengerId + "/aircrafts", new TypeReference<List<Aircraft>>() {});
+        String endpoint = "/passengers/" + passengerId + "/aircrafts";
+        return fetchList(endpoint, new TypeReference<List<Aircraft>>() {});
     }
 
     public List<Airport> getAllAirports() {
         return fetchList("/airports", new TypeReference<List<Airport>>() {});
     }
 
-    public Passenger getPassengerById(Long passengerId) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/passengers/" + passengerId))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                return objectMapper.readValue(response.body(), Passenger.class);
-            } else {
-                System.err.println("Error: " + response.body());
-                return null;
-            }
-        } catch (IOException | InterruptedException e) {
-            System.err.println("Exception occurred: " + e.getMessage());
-            return null;
-        }
+    public Passenger getPassengerById(Long id) {
+        return fetchObject("/passengers/" + id, Passenger.class);
     }
 
+    public List<Passenger> getPassengersByCityId(Long cityId) {
+        return fetchList("/cities/" + cityId + "/passengers", new TypeReference<List<Passenger>>() {});
+    }
 
-    public List<Aircraft> getAllAircraft() {
-        System.out.println("Fetching all aircraft from " + baseUrl + "/aircraft");
-        List<Aircraft> aircraftList = fetchList("/aircraft", new TypeReference<List<Aircraft>>() {});
-        if (aircraftList == null) {
-            System.err.println("Failed to fetch aircraft");
-            return List.of();
-        }
-        System.out.println("Successfully fetched " + aircraftList.size() + " aircraft");
-        return aircraftList;
+    public List<Airport> getAirportsByCityId(Long cityId) {
+        return fetchList("/cities/" + cityId + "/airports", new TypeReference<List<Airport>>() {});
     }
 
     public City getCityById(Long cityId) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/cities/" + cityId))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                return objectMapper.readValue(response.body(), City.class);
-            } else {
-                System.err.println("Error: " + response.body());
-                return null;
-            }
-        } catch (IOException | InterruptedException e) {
-            System.err.println("Exception occurred: " + e.getMessage());
-            return null;
-        }
+        return fetchObject("/cities/" + cityId, City.class);
     }
 
-    public List<Passenger> getAllPassengers() {
+    public Airport getAirportById(Long airportId) {
+        return fetchObject("/airports/" + airportId, Airport.class);
+    }
+
+    public Aircraft getAircraftById(Long aircraftId) {
+        return fetchObject("/aircraft/" + aircraftId, Aircraft.class);
+    }
+
+    public List<Aircraft> getAllAircraft() {
+        return fetchList("/aircraft", new TypeReference<List<Aircraft>>() {});
+    }
+
+    public List<City> getAllCities() {
+        return fetchList("/cities", new TypeReference<List<City>>() {});
+    }
+
+    public List<Passenger> getPassengers() {
         return fetchList("/passengers", new TypeReference<List<Passenger>>() {});
     }
 
@@ -105,10 +84,14 @@ public class RESTClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() == 200) {
+            // Handle status codes
+            if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
                 return objectMapper.readValue(response.body(), clazz);
+            } else if (response.statusCode() == 204) {
+                System.out.println("No content for the requested resource: " + endpoint);
+                return null; // Handle No Content
             } else {
-                System.err.println("Error: " + response.body());
+                System.err.println("Error (" + response.statusCode() + "): " + response.body());
                 return null;
             }
         } catch (IOException | InterruptedException e) {
@@ -126,10 +109,17 @@ public class RESTClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() == 200) {
+            // Handle status codes
+            if (response.statusCode() == 200 && response.body() != null && !response.body().isEmpty()) {
                 return objectMapper.readValue(response.body(), typeReference);
+            } else if (response.statusCode() == 204) {
+                System.out.println("No content for the requested resource: " + endpoint);
+                return List.of(); // Return empty list for No Content
+            } else if (response.statusCode() == 404) {
+                System.err.println("Error 404: Resource not found for endpoint: " + endpoint);
+                return List.of();
             } else {
-                System.err.println("Error: " + response.body());
+                System.err.println("Error (" + response.statusCode() + "): " + response.body());
                 return null;
             }
         } catch (IOException | InterruptedException e) {
