@@ -235,7 +235,7 @@ public class CommandLineInterface {
         System.out.println();
     }
 
-    private void listPassengers() {
+    public void listPassengers() {
         List<Passenger> passengers = restClient.getPassengers();
         if (passengers != null) {
             System.out.println("\n===================================");
