@@ -78,4 +78,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 Contributions are welcome! Please fork the repository and submit a pull request for any changes you make.
 
 ## Contact
-For any inquiries or issues, please contact [Your Name] at [your-email@example.com].
+For any inquiries or issues, please contact Steve @ steve.sharpe@keyin.com
